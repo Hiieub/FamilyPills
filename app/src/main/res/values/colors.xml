@@ -20,4 +20,7 @@
     <color name="tag_evening_bg">#E1F5FE</color>
     <color name="tag_evening_text">#0277BD</color>
     <color name="success_container">#C8E6C9</color>
+    <color name="error_red">#EF4444</color>
+    <color name="success_green">#059669</color>
+    <color name="progress_blue">#2563EB</color>
 </resources>

@@ -15,7 +15,6 @@ import com.example.familypills.R;
 import com.example.familypills.ui.cabinet.CabinetFragment;
 import com.example.familypills.ui.home.HomeFragment;
 import com.example.familypills.ui.profile.ProfileFragment;
-import com.example.familypills.ui.schedule.ScheduleFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
@@ -51,8 +50,6 @@ public class MainActivity extends AppCompatActivity {
 
                 if (itemId == R.id.nav_home) {
                     selectedFragment = new HomeFragment();
-                } else if (itemId == R.id.nav_schedule) {
-                    selectedFragment = new ScheduleFragment();
                 } else if (itemId == R.id.nav_cabinet) {
                     selectedFragment = new CabinetFragment();
                 } else if (itemId == R.id.nav_profile) {

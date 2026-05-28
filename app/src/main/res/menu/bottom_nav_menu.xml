@@ -3,17 +3,13 @@
     <item
         android:id="@+id/nav_home"
         android:icon="@drawable/ic_home"
-        android:title="Home" />
-    <item
-        android:id="@+id/nav_schedule"
-        android:icon="@drawable/ic_home"
-        android:title="Schedule" />
+        android:title="Trang chủ" />
     <item
         android:id="@+id/nav_cabinet"
-        android:icon="@drawable/ic_home"
-        android:title="Cabinet" />
+        android:icon="@drawable/ic_medical"
+        android:title="Tủ thuốc" />
     <item
         android:id="@+id/nav_profile"
-        android:icon="@drawable/ic_home"
-        android:title="Profile" />
+        android:icon="@drawable/ic_person"
+        android:title="Cá nhân" />
 </menu>
