@@ -54,11 +54,15 @@ dependencies {
     // ML Kit Barcode Scanning
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
-    // Room dependencies
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    annotationProcessor("androidx.room:room-compiler:$roomVersion")
-    // implementation("androidx.room:room-ktx:$roomVersion") // For Coroutines
+    // Networking dependencies (Retrofit & GSON)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Room dependencies (Optional: keep if you want local cache, or remove if going 100% API)
+    // val roomVersion = "2.6.1"
+    // implementation("androidx.room:room-runtime:$roomVersion")
+    // annotationProcessor("androidx.room:room-compiler:$roomVersion")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

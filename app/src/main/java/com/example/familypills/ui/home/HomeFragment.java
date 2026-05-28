@@ -61,11 +61,15 @@ public class HomeFragment extends Fragment {
 
         // Click listeners for quick actions
         view.findViewById(R.id.btnQuickAdd).setOnClickListener(v -> {
-            // TODO: Navigate to Add Medicine
+            android.content.Intent intent = new android.content.Intent(getActivity(), com.example.familypills.ui.add_medicine.AddMedicineActivity.class);
+            intent.putExtra(com.example.familypills.ui.add_medicine.AddMedicineActivity.EXTRA_START_STEP, 0);
+            startActivity(intent);
         });
 
         view.findViewById(R.id.btnScanCabinet).setOnClickListener(v -> {
-            // TODO: Open Scanner
+            android.content.Intent intent = new android.content.Intent(getActivity(), com.example.familypills.ui.add_medicine.AddMedicineActivity.class);
+            intent.putExtra(com.example.familypills.ui.add_medicine.AddMedicineActivity.EXTRA_START_STEP, 1);
+            startActivity(intent);
         });
     }
 }

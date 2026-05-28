@@ -9,6 +9,8 @@ public class AddMedicineActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
 
+    public static final String EXTRA_START_STEP = "extra_start_step";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -20,6 +22,9 @@ public class AddMedicineActivity extends AppCompatActivity {
 
         AddMedicinePagerAdapter adapter = new AddMedicinePagerAdapter(this);
         viewPager.setAdapter(adapter);
+
+        int startStep = getIntent().getIntExtra(EXTRA_START_STEP, 0);
+        viewPager.setCurrentItem(startStep, false);
     }
 
     public void setCurrentTab(int position) {

@@ -1,12 +1,6 @@
 package com.example.familypills.data.model;
 
-import androidx.room.Entity;
-import androidx.room.PrimaryKey;
-import androidx.room.Ignore;
-
-@Entity(tableName = "medicines")
 public class Medicine {
-    @PrimaryKey(autoGenerate = true)
     private int id;
     
     private String name;
@@ -25,7 +19,6 @@ public class Medicine {
     public Medicine() {
     }
 
-    @Ignore
     public Medicine(String name, String barcode, int totalQuantity, String unit, String expiryDate, String imagePath) {
         this.name = name;
         this.barcode = barcode;

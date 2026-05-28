@@ -1,18 +1,6 @@
 package com.example.familypills.data.model;
 
-import androidx.room.Entity;
-import androidx.room.ForeignKey;
-import androidx.room.Index;
-import androidx.room.PrimaryKey;
-
-@Entity(tableName = "reminders",
-        foreignKeys = @ForeignKey(entity = Medicine.class,
-                parentColumns = "id",
-                childColumns = "medicineId",
-                onDelete = ForeignKey.CASCADE),
-        indices = {@Index("medicineId")})
 public class Reminder {
-    @PrimaryKey(autoGenerate = true)
     private int id;
     
     private int medicineId;
