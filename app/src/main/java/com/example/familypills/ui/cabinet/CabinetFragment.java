@@ -58,11 +58,6 @@ public class CabinetFragment extends Fragment {
             public void onDelete(Medicine medicine) {
                 showDeleteConfirmationDialog(medicine);
             }
-
-            @Override
-            public void onToggleReminder(Medicine medicine) {
-                viewModel.toggleReminder(medicine);
-            }
         });
 
         viewModel.getMedicines().observe(getViewLifecycleOwner(), medicines -> {

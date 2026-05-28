@@ -49,22 +49,14 @@ public class CabinetViewModel extends ViewModel {
         applyFilterAndSearch();
     }
 
-    public void toggleReminder(Medicine medicine) {
-        medicine.setReminderEnabled(!medicine.isReminderEnabled());
-        List<Medicine> currentList = medicines.getValue();
-        if (currentList != null) {
-            medicines.setValue(new ArrayList<>(currentList)); // Trigger UI update
-        }
-    }
-
     private void loadMedicines() {
         List<Medicine> list = new ArrayList<>();
         if ("Đang dùng".equals(filter.getValue())) {
-            list.add(new Medicine("1", "Vitamin C 1000mg", "Còn 28 viên", "20/05/2027", "20/10/2023", true, false, true));
-            list.add(new Medicine("2", "Dầu cá Omega 3", "Còn 45 viên", "20/08/2027", "20/10/2023", false, false, false));
-            list.add(new Medicine("3", "Siro ho Prospan", "Còn ~50ml", "20/01/2027", "20/10/2023", false, false, true));
+            list.add(new Medicine("1", "Vitamin C 1000mg", "Còn 28 viên", "20/05/2027", "20/10/2023", true, false));
+            list.add(new Medicine("2", "Dầu cá Omega 3", "Còn 45 viên", "20/08/2027", "20/10/2023", false, false));
+            list.add(new Medicine("3", "Siro ho Prospan", "Còn ~50ml", "20/01/2027", "20/10/2023", false, false));
         } else {
-            list.add(new Medicine("4", "Panadol Extra", "0 viên", "20/01/2023", "10/01/2023", false, true, false));
+            list.add(new Medicine("4", "Panadol Extra", "0 viên", "20/01/2023", "10/01/2023", false, true));
         }
         allMedicines = list;
         applyFilterAndSearch();

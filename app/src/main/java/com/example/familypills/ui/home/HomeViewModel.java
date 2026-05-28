@@ -31,8 +31,8 @@ public class HomeViewModel extends ViewModel {
         
         List<Medicine> meds = new ArrayList<>();
         // Using the comprehensive constructor to ensure consistency
-        meds.add(new Medicine("123456", "Paracetamol 500mg", "Còn 20 viên", "01/12/2025", "20/10/2023", true, false, false));
-        meds.add(new Medicine("654321", "Vitamin C", "Còn 10 viên", "15/06/2024", "20/10/2023", false, false, false));
+        meds.add(new Medicine("123456", "Paracetamol 500mg", "Còn 20 viên", "01/12/2025", "20/10/2023", true, false));
+        meds.add(new Medicine("654321", "Vitamin C", "Còn 10 viên", "15/06/2024", "20/10/2023", false, false));
         recentMedicines.setValue(meds);
     }
 }

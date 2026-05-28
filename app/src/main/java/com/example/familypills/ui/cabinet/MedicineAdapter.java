@@ -22,7 +22,6 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
     public interface OnMedicineActionListener {
         void onEdit(Medicine medicine);
         void onDelete(Medicine medicine);
-        void onToggleReminder(Medicine medicine);
     }
 
     private List<Medicine> medicineList = new ArrayList<>();

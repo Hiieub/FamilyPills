@@ -14,7 +14,6 @@ public class Medicine {
     private String lastUpdated;
     private boolean isRunningLow;
     private boolean isExpired;
-    private boolean isReminderEnabled;
 
     public Medicine() {
     }
@@ -28,7 +27,7 @@ public class Medicine {
         this.imagePath = imagePath;
     }
 
-    public Medicine(String barcode, String name, String quantity, String expiryDate, String lastUpdated, boolean isRunningLow, boolean isExpired, boolean isReminderEnabled) {
+    public Medicine(String barcode, String name, String quantity, String expiryDate, String lastUpdated, boolean isRunningLow, boolean isExpired) {
         this.barcode = barcode;
         this.name = name;
         this.quantity = quantity;
@@ -36,7 +35,6 @@ public class Medicine {
         this.lastUpdated = lastUpdated;
         this.isRunningLow = isRunningLow;
         this.isExpired = isExpired;
-        this.isReminderEnabled = isReminderEnabled;
     }
 
     public int getId() { return id; }
@@ -71,7 +69,4 @@ public class Medicine {
 
     public boolean isExpired() { return isExpired; }
     public void setExpired(boolean expired) { isExpired = expired; }
-
-    public boolean isReminderEnabled() { return isReminderEnabled; }
-    public void setReminderEnabled(boolean reminderEnabled) { isReminderEnabled = reminderEnabled; }
 }
