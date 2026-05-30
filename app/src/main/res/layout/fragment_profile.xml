@@ -27,6 +27,14 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
+        <ProgressBar
+            android:id="@+id/profileProgressBar"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="16dp"
+            android:visibility="gone" />
+
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
@@ -105,11 +113,16 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Health Info Menu -->
+
+            <!-- Edit Profile Menu -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/cvEditProfile"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardBackgroundColor="@color/white"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp">
@@ -124,13 +137,13 @@
                     <View
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:background="@drawable/bg_filter_selected" />
+                        android:background="#F0FDF4" />
 
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_marginStart="-30dp"
-                        android:src="@drawable/ic_medical"
+                        android:src="@drawable/ic_edit"
                         app:tint="@color/progress_green" />
 
                     <LinearLayout
@@ -143,7 +156,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Thông tin sức khỏe"
+                            android:text="Cập nhật thông tin"
                             android:textColor="@color/text_main"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -152,7 +165,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Nhóm máu, dị ứng thuốc, chiều cao..."
+                            android:text="Thay đổi họ tên, ảnh đại diện"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -165,11 +178,15 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Notifications Menu -->
+            <!-- Change Password Menu -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/cvChangePassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardBackgroundColor="@color/white"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp">
@@ -184,16 +201,14 @@
                     <View
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:background="#EFF6FF"
-                        android:backgroundTint="#EFF6FF"
-                        android:backgroundTintMode="src_over" />
+                        android:background="#FEF2F2" />
 
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_marginStart="-30dp"
-                        android:src="@drawable/ic_notifications"
-                        app:tint="#2563EB" />
+                        android:src="@drawable/ic_lock"
+                        app:tint="#EF4444" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -205,7 +220,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Cài đặt thông báo"
+                            android:text="Đổi mật khẩu"
                             android:textColor="@color/text_main"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -214,7 +229,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Âm thanh, rung, thông báo tủ thuốc"
+                            android:text="Bảo mật tài khoản của bạn"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
                     </LinearLayout>
