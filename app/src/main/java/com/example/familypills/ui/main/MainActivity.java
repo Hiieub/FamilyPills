@@ -1,5 +1,6 @@
 package com.example.familypills.ui.main;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 
@@ -12,7 +13,9 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.familypills.R;
+import com.example.familypills.data.repository.AuthRepository;
 import com.example.familypills.ui.cabinet.CabinetFragment;
+import com.example.familypills.ui.auth.LoginActivity;
 import com.example.familypills.ui.home.HomeFragment;
 import com.example.familypills.ui.profile.ProfileFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -26,6 +29,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
+        AuthRepository authRepository = new AuthRepository(this);
+        if (!authRepository.isLoggedIn()) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_main);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {

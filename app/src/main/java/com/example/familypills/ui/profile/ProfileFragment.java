@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.familypills.R;
 import com.example.familypills.data.model.UserProfile;
+import com.example.familypills.data.repository.AuthRepository;
 import com.example.familypills.ui.auth.LoginActivity;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -148,6 +149,10 @@ public class ProfileFragment extends Fragment {
     }
 
     private void logout() {
+        if (getContext() != null) {
+            new AuthRepository(getContext()).clearSession();
+        }
+
         Intent intent = new Intent(getActivity(), LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

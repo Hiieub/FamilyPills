@@ -18,10 +18,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class RetrofitClient {
     private static final String BASE_URL_EMULATOR = "http://10.0.2.2:5000/";
-    private static final String BASE_URL_PHYSICAL = "http://localhost:5000/";
+    private static final String BASE_URL_PHYSICAL_USB = "http://127.0.0.1:5000/";
 
     private static String getBaseUrl() {
-        return isEmulator() ? BASE_URL_EMULATOR : BASE_URL_PHYSICAL;
+        return isEmulator() ? BASE_URL_EMULATOR : BASE_URL_PHYSICAL_USB;
     }
 
     private static boolean isEmulator() {
