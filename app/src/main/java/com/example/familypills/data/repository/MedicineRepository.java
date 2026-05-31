@@ -6,6 +6,7 @@ import com.example.familypills.data.model.ApiResponse;
 import com.example.familypills.data.model.Medicine;
 import com.example.familypills.data.remote.ApiService;
 import com.example.familypills.data.remote.RetrofitClient;
+import com.example.familypills.utils.Constants;
 
 import java.util.List;
 
@@ -17,19 +18,23 @@ public class MedicineRepository {
 
     public MedicineRepository(Context context) {
         this.apiService = RetrofitClient.getApiService(context);
-        this.token = "Bearer " + context.getSharedPreferences("FamilyPillsPreferences", Context.MODE_PRIVATE)
-                .getString("auth_token", "");
+        this.token = null;
     }
 
-    public Call<ApiResponse<ApiService.MedicineListResponse>> getAllMedicines(int skip, int take, String filter, String search) {
-        return apiService.getAllMedicines(token, skip, take, filter, search);
+    private String getToken(Context context) {
+        return "Bearer " + context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
+                .getString(Constants.PREF_AUTH_TOKEN, "");
     }
 
-    public Call<ApiResponse<Medicine>> addMedicine(Medicine medicine) {
-        return apiService.addMedicine(token, medicine);
+    public Call<ApiResponse<ApiService.MedicineListResponse>> getAllMedicines(Context context, int skip, int take, String filter, String search) {
+        return apiService.getAllMedicines(getToken(context), skip, take, filter, search);
     }
 
-    public Call<ApiResponse<ApiService.DeleteResponse>> deleteMedicine(int id) {
-        return apiService.deleteMedicine(token, id);
+    public Call<ApiResponse<Medicine>> addMedicine(Context context, Medicine medicine) {
+        return apiService.addMedicine(getToken(context), medicine);
+    }
+
+    public Call<ApiResponse<ApiService.DeleteResponse>> deleteMedicine(Context context, int id) {
+        return apiService.deleteMedicine(getToken(context), id);
     }
 }

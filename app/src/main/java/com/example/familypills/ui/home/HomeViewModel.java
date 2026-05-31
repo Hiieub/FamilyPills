@@ -39,7 +39,7 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<List<Medicine>> getRecentMedicines() { return recentMedicines; }
 
     private void loadUserProfile() {
-        userRepository.getUserProfile().enqueue(new Callback<ApiResponse<UserProfile>>() {
+        userRepository.getUserProfile(getApplication()).enqueue(new Callback<ApiResponse<UserProfile>>() {
             @Override
             public void onResponse(Call<ApiResponse<UserProfile>> call, Response<ApiResponse<UserProfile>> response) {
                 if (response.isSuccessful() && response.body() != null) {

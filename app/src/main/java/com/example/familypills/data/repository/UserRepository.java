@@ -6,6 +6,7 @@ import com.example.familypills.data.model.ApiResponse;
 import com.example.familypills.data.model.UserProfile;
 import com.example.familypills.data.remote.ApiService;
 import com.example.familypills.data.remote.RetrofitClient;
+import com.example.familypills.utils.Constants;
 
 import retrofit2.Call;
 
@@ -15,27 +16,28 @@ public class UserRepository {
 
     public UserRepository(Context context) {
         this.apiService = RetrofitClient.getApiService(context);
-        // Token is handled by AuthInterceptor in RetrofitClient, 
-        // but some methods in ApiService still have @Header("Authorization")
-        // We'll get it from SharedPreferences if needed, or rely on Interceptor
-        this.token = "Bearer " + context.getSharedPreferences("FamilyPillsPreferences", Context.MODE_PRIVATE)
-                .getString("token", "");
+        this.token = null;
     }
 
-    public Call<ApiResponse<UserProfile>> getUserProfile() {
-        return apiService.getUserProfile(token);
+    private String getToken(Context context) {
+        return "Bearer " + context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
+                .getString(Constants.PREF_AUTH_TOKEN, "");
     }
 
-    public Call<ApiResponse<UserProfile>> updateUserProfile(String fullName) {
+    public Call<ApiResponse<UserProfile>> getUserProfile(Context context) {
+        return apiService.getUserProfile(getToken(context));
+    }
+
+    public Call<ApiResponse<UserProfile>> updateUserProfile(Context context, String fullName) {
         ApiService.UpdateProfileRequest request = new ApiService.UpdateProfileRequest();
         request.fullName = fullName;
-        return apiService.updateUserProfile(token, request);
+        return apiService.updateUserProfile(getToken(context), request);
     }
 
-    public Call<ApiResponse<Void>> changePassword(String currentPassword, String newPassword) {
+    public Call<ApiResponse<Void>> changePassword(Context context, String currentPassword, String newPassword) {
         ApiService.ChangePasswordRequest request = new ApiService.ChangePasswordRequest();
         request.currentPassword = currentPassword;
         request.newPassword = newPassword;
-        return apiService.changePassword(token, request);
+        return apiService.changePassword(getToken(context), request);
     }
 }

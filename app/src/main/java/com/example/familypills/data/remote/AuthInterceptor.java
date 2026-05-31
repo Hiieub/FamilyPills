@@ -5,6 +5,8 @@ import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import com.example.familypills.utils.Constants;
+
 import java.io.IOException;
 
 /**
@@ -28,7 +30,7 @@ public class AuthInterceptor implements Interceptor {
         }
 
         // Add token to other requests
-        String token = preferences.getString("auth_token", null);
+        String token = preferences.getString(Constants.PREF_AUTH_TOKEN, null);
         if (token != null && !token.isEmpty()) {
             Request authenticatedRequest = originalRequest.newBuilder()
                     .header("Authorization", "Bearer " + token)

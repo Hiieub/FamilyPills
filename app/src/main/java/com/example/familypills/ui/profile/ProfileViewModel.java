@@ -36,7 +36,7 @@ public class ProfileViewModel extends AndroidViewModel {
 
     public void loadUserProfile() {
         isLoading.setValue(true);
-        userRepository.getUserProfile().enqueue(new Callback<ApiResponse<UserProfile>>() {
+        userRepository.getUserProfile(getApplication()).enqueue(new Callback<ApiResponse<UserProfile>>() {
             @Override
             public void onResponse(Call<ApiResponse<UserProfile>> call, Response<ApiResponse<UserProfile>> response) {
                 isLoading.setValue(false);
@@ -59,7 +59,7 @@ public class ProfileViewModel extends AndroidViewModel {
         if (userProfile.getValue() == null) return;
         
         isLoading.setValue(true);
-        userRepository.updateUserProfile(fullName).enqueue(new Callback<ApiResponse<UserProfile>>() {
+        userRepository.updateUserProfile(getApplication(), fullName).enqueue(new Callback<ApiResponse<UserProfile>>() {
             @Override
             public void onResponse(Call<ApiResponse<UserProfile>> call, Response<ApiResponse<UserProfile>> response) {
                 isLoading.setValue(false);
@@ -81,7 +81,7 @@ public class ProfileViewModel extends AndroidViewModel {
 
     public void changePassword(String currentPassword, String newPassword) {
         isLoading.setValue(true);
-        userRepository.changePassword(currentPassword, newPassword).enqueue(new Callback<ApiResponse<Void>>() {
+        userRepository.changePassword(getApplication(), currentPassword, newPassword).enqueue(new Callback<ApiResponse<Void>>() {
             @Override
             public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
                 isLoading.setValue(false);

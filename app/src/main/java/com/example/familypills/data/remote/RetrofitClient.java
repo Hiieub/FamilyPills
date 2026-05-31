@@ -3,6 +3,8 @@ package com.example.familypills.data.remote;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.example.familypills.utils.Constants;
+
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -60,7 +62,7 @@ public class RetrofitClient {
      * Create new Retrofit instance with all configurations
      */
     private static Retrofit createRetrofitInstance(Context context) {
-        SharedPreferences preferences = context.getSharedPreferences("FamilyPillsPreferences", Context.MODE_PRIVATE);
+        SharedPreferences preferences = context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE);
 
         // HTTP Logging Interceptor
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
