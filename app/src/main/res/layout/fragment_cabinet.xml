@@ -104,7 +104,42 @@
                 android:text="Hết hạn"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvFilterRunningLow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:background="@drawable/bg_filter_unselected"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:text="Sắp hết hạn"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
         </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/rvMedicines"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/rvMedicines" />
+
+        <TextView
+            android:id="@+id/tvEmptyState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chua co thuoc"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/rvMedicines"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/rvMedicines" />
 
         <!-- Medicine List -->
         <androidx.recyclerview.widget.RecyclerView

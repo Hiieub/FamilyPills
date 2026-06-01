@@ -11,9 +11,11 @@ import com.example.familypills.R;
 
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.net.Uri;
@@ -21,28 +23,41 @@ import android.app.DatePickerDialog;
 import java.util.Calendar;
 import java.util.Locale;
 
+import com.example.familypills.data.model.ApiResponse;
+import com.example.familypills.data.model.Medicine;
+import com.example.familypills.data.repository.MedicineRepository;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 
 public class AddMedicineInfoFragment extends Fragment {
+
+    private MedicineRepository medicineRepository;
+    private String capturedImagePath = null;
+    private int editMedicineId = -1;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_add_medicine_info, container, false);
 
+        medicineRepository = new MedicineRepository(requireContext());
+
         TextView tvTitle = view.findViewById(R.id.tv_title);
         ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
+        Button btnSave = view.findViewById(R.id.btn_save_medicine);
 
         // Check if editing
-        int medicineId = -1;
         if (getActivity() != null && getActivity().getIntent() != null) {
-            medicineId = getActivity().getIntent().getIntExtra("medicine_id", -1);
+            editMedicineId = getActivity().getIntent().getIntExtra("medicine_id", -1);
         }
 
-        if (medicineId != -1) {
+        if (editMedicineId != -1) {
             if (tvTitle != null) tvTitle.setText("Chỉnh Sửa Thuốc");
-            android.widget.Button btnSave = view.findViewById(R.id.btn_save_medicine);
             btnSave.setText("LƯU THAY ĐỔI");
-            btnSave.setTag(medicineId);
-            loadMedicineData(view, medicineId);
+            loadMedicineData(view, editMedicineId);
         }
 
         view.findViewById(R.id.btn_back).setOnClickListener(v -> {
@@ -51,14 +66,7 @@ public class AddMedicineInfoFragment extends Fragment {
             }
         });
 
-        view.findViewById(R.id.btn_save_medicine).setOnClickListener(v -> {
-            boolean isEdit = v.getTag() != null;
-            String message = isEdit ? "Cập nhật thuốc thành công!" : "Thêm thuốc thành công!";
-            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            if (getActivity() != null) {
-                getActivity().finish();
-            }
-        });
+        btnSave.setOnClickListener(v -> saveMedicine(view, btnSave));
 
         view.findViewById(R.id.btn_scan_barcode).setOnClickListener(v -> {
             if (viewPager != null) {
@@ -108,10 +116,11 @@ public class AddMedicineInfoFragment extends Fragment {
             datePickerDialog.show();
         });
 
-        // Listen for image results (Mocking with Fragment Result API if available or just using a simple check)
+        // Listen for image results
         getParentFragmentManager().setFragmentResultListener("photo_captured", this, (requestKey, bundle) -> {
             String imagePath = bundle.getString("imagePath");
             if (imagePath != null) {
+                capturedImagePath = imagePath;
                 ImageView ivMedicineImage = view.findViewById(R.id.iv_medicine_image);
                 View placeholder = view.findViewById(R.id.ll_capture_placeholder);
                 ivMedicineImage.setVisibility(View.VISIBLE);
@@ -133,27 +142,133 @@ public class AddMedicineInfoFragment extends Fragment {
         return view;
     }
 
-    private void loadMedicineData(View view, int medicineId) {
-        // Trong thực tế, bạn sẽ lấy dữ liệu từ database thông qua ViewModel/Repository
-        // Ở đây tôi demo với dữ liệu mẫu dựa trên medicineId
+    private void saveMedicine(View view, Button btnSave) {
         EditText etName = view.findViewById(R.id.et_medicine_name);
         EditText etBarcode = view.findViewById(R.id.et_barcode);
         EditText etTotalQuantity = view.findViewById(R.id.et_total_quantity);
         TextView tvUnit = view.findViewById(R.id.tv_unit);
         TextView tvExpiryDate = view.findViewById(R.id.tv_expiry_date);
-        ImageView ivMedicineImage = view.findViewById(R.id.iv_medicine_image);
-        View placeholder = view.findViewById(R.id.ll_capture_placeholder);
 
-        // Giả lập dữ liệu thuốc cần sửa
-        etName.setText("Vitamin C 1000mg");
-        etBarcode.setText("8934567890123");
-        etTotalQuantity.setText("30");
-        tvUnit.setText("Viên");
-        tvExpiryDate.setText("05/20/2027");
-        tvExpiryDate.setTextColor(getResources().getColor(R.color.text_main));
-        
-        // Nếu có ảnh thì hiển thị (giả lập)
-        // ivMedicineImage.setVisibility(View.VISIBLE);
-        // placeholder.setVisibility(View.GONE);
+        String name = etName.getText().toString().trim();
+        String barcode = etBarcode.getText().toString().trim();
+        String quantityStr = etTotalQuantity.getText().toString().trim();
+        String unit = tvUnit.getText().toString();
+        String expiryDate = tvExpiryDate.getText().toString();
+
+        // Validation
+        if (name.isEmpty()) {
+            etName.setError("Tên thuốc không được để trống");
+            etName.requestFocus();
+            return;
+        }
+
+        int totalQuantity = 0;
+        if (!quantityStr.isEmpty()) {
+            try {
+                totalQuantity = Integer.parseInt(quantityStr);
+                if (totalQuantity < 0) {
+                    etTotalQuantity.setError("Số lượng không được âm");
+                    etTotalQuantity.requestFocus();
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                etTotalQuantity.setError("Số lượng không hợp lệ");
+                etTotalQuantity.requestFocus();
+                return;
+            }
+        }
+
+        if (unit.equals("Chọn đơn vị")) {
+            unit = null;
+        }
+        if (expiryDate.equals("Chọn ngày") || expiryDate.equals("Chọn ngày hết hạn")) {
+            expiryDate = null;
+        }
+
+        Medicine medicine = new Medicine(name, barcode.isEmpty() ? null : barcode, totalQuantity, unit, expiryDate, capturedImagePath);
+
+        btnSave.setEnabled(false);
+        btnSave.setText("Đang lưu...");
+
+        if (editMedicineId != -1) {
+            // Update existing medicine
+            medicineRepository.updateMedicine(requireContext(), editMedicineId, medicine).enqueue(new Callback<ApiResponse<Medicine>>() {
+                @Override
+                public void onResponse(Call<ApiResponse<Medicine>> call, Response<ApiResponse<Medicine>> response) {
+                    btnSave.setEnabled(true);
+                    btnSave.setText("LƯU THAY ĐỔI");
+                    if (response.isSuccessful()) {
+                        Toast.makeText(getContext(), "Cập nhật thuốc thành công!", Toast.LENGTH_SHORT).show();
+                        if (getActivity() != null) getActivity().finish();
+                    } else {
+                        Toast.makeText(getContext(), "Cập nhật thất bại. Vui lòng thử lại.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ApiResponse<Medicine>> call, Throwable t) {
+                    btnSave.setEnabled(true);
+                    btnSave.setText("LƯU THAY ĐỔI");
+                    Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            // Add new medicine
+            medicineRepository.addMedicine(requireContext(), medicine).enqueue(new Callback<ApiResponse<Medicine>>() {
+                @Override
+                public void onResponse(Call<ApiResponse<Medicine>> call, Response<ApiResponse<Medicine>> response) {
+                    btnSave.setEnabled(true);
+                    btnSave.setText("THÊM THUỐC");
+                    if (response.isSuccessful()) {
+                        Toast.makeText(getContext(), "Thêm thuốc thành công!", Toast.LENGTH_SHORT).show();
+                        if (getActivity() != null) getActivity().finish();
+                    } else {
+                        Toast.makeText(getContext(), "Thêm thuốc thất bại. Vui lòng thử lại.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ApiResponse<Medicine>> call, Throwable t) {
+                    btnSave.setEnabled(true);
+                    btnSave.setText("THÊM THUỐC");
+                    Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    private void loadMedicineData(View view, int medicineId) {
+        medicineRepository.getMedicineById(requireContext(), medicineId).enqueue(new Callback<ApiResponse<Medicine>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Medicine>> call, Response<ApiResponse<Medicine>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().getData() != null) {
+                    Medicine med = response.body().getData();
+                    EditText etName = view.findViewById(R.id.et_medicine_name);
+                    EditText etBarcode = view.findViewById(R.id.et_barcode);
+                    EditText etTotalQuantity = view.findViewById(R.id.et_total_quantity);
+                    TextView tvUnit = view.findViewById(R.id.tv_unit);
+                    TextView tvExpiryDate = view.findViewById(R.id.tv_expiry_date);
+
+                    etName.setText(med.getName());
+                    if (med.getBarcode() != null) etBarcode.setText(med.getBarcode());
+                    etTotalQuantity.setText(String.valueOf(med.getTotalQuantity()));
+                    if (med.getUnit() != null) tvUnit.setText(med.getUnit());
+                    if (med.getExpiryDate() != null) {
+                        tvExpiryDate.setText(med.getExpiryDate());
+                        tvExpiryDate.setTextColor(getResources().getColor(R.color.text_main));
+                    }
+                    if (med.getImagePath() != null) {
+                        capturedImagePath = med.getImagePath();
+                    }
+                } else {
+                    Toast.makeText(getContext(), "Không thể tải thông tin thuốc", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Medicine>> call, Throwable t) {
+                Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

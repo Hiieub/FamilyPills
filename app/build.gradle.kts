@@ -64,6 +64,9 @@ dependencies {
     // implementation("androidx.room:room-runtime:$roomVersion")
     // annotationProcessor("androidx.room:room-compiler:$roomVersion")
 
+    // WorkManager
+    implementation("androidx.work:work-runtime:2.9.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

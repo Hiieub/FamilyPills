@@ -9,8 +9,12 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.familypills.data.model.ApiResponse;
 import com.example.familypills.data.model.Medicine;
+import com.example.familypills.data.model.StatsResponse;
 import com.example.familypills.data.model.UserProfile;
+import com.example.familypills.data.remote.ApiService;
+import com.example.familypills.data.repository.MedicineRepository;
 import com.example.familypills.data.repository.UserRepository;
+import com.example.familypills.utils.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +25,21 @@ import retrofit2.Response;
 
 public class HomeViewModel extends AndroidViewModel {
     private final UserRepository userRepository;
-    private final MutableLiveData<String> greeting = new MutableLiveData<>("Chào buổi sáng!");
+    private final MedicineRepository medicineRepository;
+    private final MutableLiveData<String> greeting = new MutableLiveData<>(getTimeBasedGreeting() + "!");
+
+    private String getTimeBasedGreeting() {
+        int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        if (hour >= 5 && hour < 11) {
+            return "Chào buổi sáng";
+        } else if (hour >= 11 && hour < 14) {
+            return "Chào buổi trưa";
+        } else if (hour >= 14 && hour < 18) {
+            return "Chào buổi chiều";
+        } else {
+            return "Chào buổi tối";
+        }
+    }
     private final MutableLiveData<Integer> totalMeds = new MutableLiveData<>(0);
     private final MutableLiveData<Integer> expiredSoonCount = new MutableLiveData<>(0);
     private final MutableLiveData<List<Medicine>> recentMedicines = new MutableLiveData<>();
@@ -29,6 +47,7 @@ public class HomeViewModel extends AndroidViewModel {
     public HomeViewModel(@NonNull Application application) {
         super(application);
         userRepository = new UserRepository(application);
+        medicineRepository = new MedicineRepository(application);
         loadDashboardData();
         loadUserProfile();
     }
@@ -49,7 +68,7 @@ public class HomeViewModel extends AndroidViewModel {
                         // Lấy tên cuối cùng để chào cho thân thiện
                         String[] parts = name.split(" ");
                         String firstName = parts[parts.length - 1];
-                        greeting.setValue("Chào buổi sáng, " + firstName + "!");
+                        greeting.setValue(getTimeBasedGreeting() + ", " + firstName + "!");
                     }
                 }
             }
@@ -61,14 +80,46 @@ public class HomeViewModel extends AndroidViewModel {
         });
     }
 
-    private void loadDashboardData() {
-        // TODO: Thay thế bằng gọi API thực tế từ MedicineRepository
-        totalMeds.setValue(24);
-        expiredSoonCount.setValue(3);
-        
-        List<Medicine> meds = new ArrayList<>();
-        meds.add(new Medicine("123456", "Paracetamol 500mg", "Còn 20 viên", "01/12/2025", "20/10/2023", true, false));
-        meds.add(new Medicine("654321", "Vitamin C", "Còn 10 viên", "15/06/2024", "20/10/2023", false, false));
-        recentMedicines.setValue(meds);
+    public void loadDashboardData() {
+        // Load stats from API
+        medicineRepository.getStats(getApplication()).enqueue(new Callback<ApiResponse<StatsResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<StatsResponse>> call, Response<ApiResponse<StatsResponse>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().getData() != null) {
+                    StatsResponse stats = response.body().getData();
+                    totalMeds.setValue(stats.getTotalMedicines());
+                    expiredSoonCount.setValue(stats.getExpiredSoon());
+                } else {
+                    totalMeds.setValue(0);
+                    expiredSoonCount.setValue(0);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<StatsResponse>> call, Throwable t) {
+                totalMeds.setValue(0);
+                expiredSoonCount.setValue(0);
+            }
+        });
+
+        // Load recent medicines from API
+        medicineRepository.getAllMedicines(getApplication(), Constants.PAGINATION_INITIAL_SKIP, 4, Constants.FILTER_ALL, "")
+                .enqueue(new Callback<ApiResponse<ApiService.MedicineListResponse>>() {
+                    @Override
+                    public void onResponse(Call<ApiResponse<ApiService.MedicineListResponse>> call,
+                                           Response<ApiResponse<ApiService.MedicineListResponse>> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getData() != null) {
+                            List<Medicine> items = response.body().getData().items;
+                            recentMedicines.setValue(items == null ? new ArrayList<>() : items);
+                        } else {
+                            recentMedicines.setValue(new ArrayList<>());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ApiResponse<ApiService.MedicineListResponse>> call, Throwable t) {
+                        recentMedicines.setValue(new ArrayList<>());
+                    }
+                });
     }
 }

@@ -58,6 +58,7 @@ public class Constants {
 
     // Medicine Filter Types
     public static final String FILTER_ALL = "all";
+    public static final String FILTER_EXPIRING_SOON = "expiringSoon";
     public static final String FILTER_RUNNING_LOW = "runningLow";
     public static final String FILTER_EXPIRED = "expired";
 
@@ -87,6 +88,7 @@ public class Constants {
     // Notification IDs
     public static final int NOTIFICATION_ID_RUNNING_LOW = 1001;
     public static final int NOTIFICATION_ID_EXPIRED = 1002;
+    public static final int NOTIFICATION_ID_EXPIRING_SOON = 1003;
 
     // Request Codes
     public static final int REQUEST_CODE_CAMERA = 101;

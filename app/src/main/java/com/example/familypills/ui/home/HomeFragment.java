@@ -72,4 +72,13 @@ public class HomeFragment extends Fragment {
             startActivity(intent);
         });
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) {
+            viewModel.loadDashboardData();
+        }
+    }
 }
+

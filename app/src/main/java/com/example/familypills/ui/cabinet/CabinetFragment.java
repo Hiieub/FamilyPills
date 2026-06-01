@@ -7,7 +7,9 @@ import com.example.familypills.ui.add_medicine.AddMedicineActivity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.text.Editable;
 import android.text.TextWatcher;
 
@@ -20,11 +22,13 @@ import androidx.appcompat.app.AlertDialog;
 
 import com.example.familypills.R;
 import com.example.familypills.data.model.Medicine;
+import com.example.familypills.utils.Constants;
 
 public class CabinetFragment extends Fragment {
 
     private CabinetViewModel viewModel;
     private MedicineAdapter adapter;
+    private TextView tvFilterUsing, tvFilterExpired, tvFilterRunningLow;
 
     public CabinetFragment() {
         // Required empty public constructor
@@ -60,10 +64,32 @@ public class CabinetFragment extends Fragment {
             }
         });
 
+        // Observe medicines list
         viewModel.getMedicines().observe(getViewLifecycleOwner(), medicines -> {
             adapter.setMedicineList(medicines);
+            // Show empty state if needed
+            TextView tvEmpty = view.findViewById(R.id.tvEmptyState);
+            if (tvEmpty != null) {
+                tvEmpty.setVisibility(medicines == null || medicines.isEmpty() ? View.VISIBLE : View.GONE);
+            }
         });
 
+        // Observe loading state
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            ProgressBar progressBar = view.findViewById(R.id.progressBar);
+            if (progressBar != null) {
+                progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            }
+        });
+
+        // Observe error messages
+        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Search
         EditText etSearch = view.findViewById(R.id.etSearch);
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -78,29 +104,59 @@ public class CabinetFragment extends Fragment {
             public void afterTextChanged(Editable s) {}
         });
 
-        TextView tvFilterUsing = view.findViewById(R.id.tvFilterUsing);
-        TextView tvFilterExpired = view.findViewById(R.id.tvFilterExpired);
+        // Filters
+        tvFilterUsing = view.findViewById(R.id.tvFilterUsing);
+        tvFilterExpired = view.findViewById(R.id.tvFilterExpired);
+        tvFilterRunningLow = view.findViewById(R.id.tvFilterRunningLow);
 
         tvFilterUsing.setOnClickListener(v -> {
-            viewModel.setFilter("Đang dùng");
-            tvFilterUsing.setBackgroundResource(R.drawable.bg_filter_selected);
-            tvFilterUsing.setTextColor(getResources().getColor(R.color.progress_green, null));
-            tvFilterExpired.setBackgroundResource(R.drawable.bg_filter_unselected);
-            tvFilterExpired.setTextColor(getResources().getColor(R.color.text_secondary, null));
+            viewModel.setFilter(Constants.FILTER_ALL);
+            setActiveFilter(tvFilterUsing);
         });
 
         tvFilterExpired.setOnClickListener(v -> {
-            viewModel.setFilter("Hết hạn");
-            tvFilterExpired.setBackgroundResource(R.drawable.bg_filter_selected);
-            tvFilterExpired.setTextColor(getResources().getColor(R.color.progress_green, null));
-            tvFilterUsing.setBackgroundResource(R.drawable.bg_filter_unselected);
-            tvFilterUsing.setTextColor(getResources().getColor(R.color.text_secondary, null));
+            viewModel.setFilter(Constants.FILTER_EXPIRED);
+            setActiveFilter(tvFilterExpired);
         });
 
+        if (tvFilterRunningLow != null) {
+            tvFilterRunningLow.setOnClickListener(v -> {
+                viewModel.setFilter(Constants.FILTER_EXPIRING_SOON);
+                setActiveFilter(tvFilterRunningLow);
+            });
+        }
+
+        // FAB
         view.findViewById(R.id.fabAdd).setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), AddMedicineActivity.class);
             startActivity(intent);
         });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) {
+            viewModel.loadMedicines();
+        }
+    }
+
+    private void setActiveFilter(TextView active) {
+        // Reset all filters
+        resetFilterStyle(tvFilterUsing);
+        resetFilterStyle(tvFilterExpired);
+        if (tvFilterRunningLow != null) resetFilterStyle(tvFilterRunningLow);
+
+        // Highlight active
+        active.setBackgroundResource(R.drawable.bg_filter_selected);
+        active.setTextColor(getResources().getColor(R.color.progress_green, null));
+    }
+
+    private void resetFilterStyle(TextView tv) {
+        if (tv != null) {
+            tv.setBackgroundResource(R.drawable.bg_filter_unselected);
+            tv.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        }
     }
 
     private void showDeleteConfirmationDialog(Medicine medicine) {
