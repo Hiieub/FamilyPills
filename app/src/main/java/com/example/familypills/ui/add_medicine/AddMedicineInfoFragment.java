@@ -20,11 +20,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.net.Uri;
 import android.app.DatePickerDialog;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import java.io.File;
+import java.net.URL;
 import java.util.Calendar;
 import java.util.Locale;
 
 import com.example.familypills.data.model.ApiResponse;
 import com.example.familypills.data.model.Medicine;
+import com.example.familypills.data.remote.ApiService;
+import com.example.familypills.data.remote.RetrofitClient;
 import com.example.familypills.data.repository.MedicineRepository;
 
 import retrofit2.Call;
@@ -120,12 +126,7 @@ public class AddMedicineInfoFragment extends Fragment {
         getParentFragmentManager().setFragmentResultListener("photo_captured", this, (requestKey, bundle) -> {
             String imagePath = bundle.getString("imagePath");
             if (imagePath != null) {
-                capturedImagePath = imagePath;
-                ImageView ivMedicineImage = view.findViewById(R.id.iv_medicine_image);
-                View placeholder = view.findViewById(R.id.ll_capture_placeholder);
-                ivMedicineImage.setVisibility(View.VISIBLE);
-                placeholder.setVisibility(View.GONE);
-                ivMedicineImage.setImageURI(Uri.fromFile(new java.io.File(imagePath)));
+                showMedicineImage(view, imagePath);
             }
         });
 
@@ -136,10 +137,88 @@ public class AddMedicineInfoFragment extends Fragment {
                 if (etBarcode != null) {
                     etBarcode.setText(barcode);
                 }
+                autofillFromBarcode(view, barcode);
             }
         });
 
         return view;
+    }
+
+    private void autofillFromBarcode(View view, String barcode) {
+        if (editMedicineId != -1 || barcode.trim().isEmpty()) {
+            return;
+        }
+
+        medicineRepository.validateBarcode(requireContext(), barcode.trim()).enqueue(new Callback<ApiResponse<ApiService.BarcodeValidationResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<ApiService.BarcodeValidationResponse>> call, Response<ApiResponse<ApiService.BarcodeValidationResponse>> response) {
+                if (!response.isSuccessful() || response.body() == null || response.body().getData() == null) {
+                    return;
+                }
+
+                ApiService.BarcodeValidationResponse barcodeResponse = response.body().getData();
+                if (!barcodeResponse.exists || barcodeResponse.medicine == null) {
+                    return;
+                }
+
+                applyMedicineTemplate(view, barcodeResponse.medicine);
+                Toast.makeText(getContext(), "Đã tự điền thông tin thuốc, Hãy chọn HSD mới", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<ApiService.BarcodeValidationResponse>> call, Throwable t) {
+                Toast.makeText(getContext(), "Ko thể quét mã " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void applyMedicineTemplate(View view, Medicine med) {
+        EditText etName = view.findViewById(R.id.et_medicine_name);
+        EditText etTotalQuantity = view.findViewById(R.id.et_total_quantity);
+        TextView tvUnit = view.findViewById(R.id.tv_unit);
+
+        if (med.getName() != null) {
+            etName.setText(med.getName());
+        }
+        etTotalQuantity.setText(String.valueOf(med.getTotalQuantity()));
+        if (med.getUnit() != null) {
+            tvUnit.setText(med.getUnit());
+        }
+        if (med.getImagePath() != null) {
+            showMedicineImage(view, med.getImagePath());
+        }
+    }
+
+    private void showMedicineImage(View view, String imagePath) {
+        capturedImagePath = imagePath;
+
+        ImageView ivMedicineImage = view.findViewById(R.id.iv_medicine_image);
+        View placeholder = view.findViewById(R.id.ll_capture_placeholder);
+        ivMedicineImage.setVisibility(View.VISIBLE);
+        placeholder.setVisibility(View.GONE);
+
+        File localFile = new File(imagePath);
+        if (localFile.exists()) {
+            ivMedicineImage.setImageURI(Uri.fromFile(localFile));
+            return;
+        }
+
+        String imageUrl = RetrofitClient.getAbsoluteUrl(imagePath);
+        new Thread(() -> {
+            try {
+                Bitmap bitmap = BitmapFactory.decodeStream(new URL(imageUrl).openStream());
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> ivMedicineImage.setImageBitmap(bitmap));
+                }
+            } catch (Exception ignored) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        ivMedicineImage.setVisibility(View.GONE);
+                        placeholder.setVisibility(View.VISIBLE);
+                    });
+                }
+            }
+        }).start();
     }
 
     private void saveMedicine(View view, Button btnSave) {
@@ -189,14 +268,48 @@ public class AddMedicineInfoFragment extends Fragment {
 
         btnSave.setEnabled(false);
         btnSave.setText("Đang lưu...");
+        saveMedicineWithImageUpload(medicine, btnSave);
+    }
 
+    private void saveMedicineWithImageUpload(Medicine medicine, Button btnSave) {
+        if (!isLocalImagePath(capturedImagePath)) {
+            saveMedicineToApi(medicine, btnSave);
+            return;
+        }
+
+        btnSave.setText("Đang tải ảnh...");
+        medicineRepository.uploadMedicineImage(requireContext(), new File(capturedImagePath)).enqueue(new Callback<ApiResponse<ApiService.ImageUploadResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<ApiService.ImageUploadResponse>> call, Response<ApiResponse<ApiService.ImageUploadResponse>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().getData() != null) {
+                    capturedImagePath = response.body().getData().imagePath;
+                    medicine.setImagePath(capturedImagePath);
+                    saveMedicineToApi(medicine, btnSave);
+                } else {
+                    resetSaveButton(btnSave);
+                    Toast.makeText(getContext(), "Tải ảnh thất bại. Vui lòng thử lại.", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<ApiService.ImageUploadResponse>> call, Throwable t) {
+                resetSaveButton(btnSave);
+                Toast.makeText(getContext(), "Lỗi tải ảnh: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private boolean isLocalImagePath(String imagePath) {
+        return imagePath != null && new File(imagePath).exists();
+    }
+
+    private void saveMedicineToApi(Medicine medicine, Button btnSave) {
         if (editMedicineId != -1) {
             // Update existing medicine
             medicineRepository.updateMedicine(requireContext(), editMedicineId, medicine).enqueue(new Callback<ApiResponse<Medicine>>() {
                 @Override
                 public void onResponse(Call<ApiResponse<Medicine>> call, Response<ApiResponse<Medicine>> response) {
-                    btnSave.setEnabled(true);
-                    btnSave.setText("LƯU THAY ĐỔI");
+                    resetSaveButton(btnSave);
                     if (response.isSuccessful()) {
                         Toast.makeText(getContext(), "Cập nhật thuốc thành công!", Toast.LENGTH_SHORT).show();
                         if (getActivity() != null) getActivity().finish();
@@ -207,8 +320,7 @@ public class AddMedicineInfoFragment extends Fragment {
 
                 @Override
                 public void onFailure(Call<ApiResponse<Medicine>> call, Throwable t) {
-                    btnSave.setEnabled(true);
-                    btnSave.setText("LƯU THAY ĐỔI");
+                    resetSaveButton(btnSave);
                     Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
@@ -217,8 +329,7 @@ public class AddMedicineInfoFragment extends Fragment {
             medicineRepository.addMedicine(requireContext(), medicine).enqueue(new Callback<ApiResponse<Medicine>>() {
                 @Override
                 public void onResponse(Call<ApiResponse<Medicine>> call, Response<ApiResponse<Medicine>> response) {
-                    btnSave.setEnabled(true);
-                    btnSave.setText("THÊM THUỐC");
+                    resetSaveButton(btnSave);
                     if (response.isSuccessful()) {
                         Toast.makeText(getContext(), "Thêm thuốc thành công!", Toast.LENGTH_SHORT).show();
                         if (getActivity() != null) getActivity().finish();
@@ -229,12 +340,16 @@ public class AddMedicineInfoFragment extends Fragment {
 
                 @Override
                 public void onFailure(Call<ApiResponse<Medicine>> call, Throwable t) {
-                    btnSave.setEnabled(true);
-                    btnSave.setText("THÊM THUỐC");
+                    resetSaveButton(btnSave);
                     Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
         }
+    }
+
+    private void resetSaveButton(Button btnSave) {
+        btnSave.setEnabled(true);
+        btnSave.setText(editMedicineId != -1 ? "LƯU THAY ĐỔI" : "THÊM THUỐC");
     }
 
     private void loadMedicineData(View view, int medicineId) {
@@ -258,7 +373,7 @@ public class AddMedicineInfoFragment extends Fragment {
                         tvExpiryDate.setTextColor(getResources().getColor(R.color.text_main));
                     }
                     if (med.getImagePath() != null) {
-                        capturedImagePath = med.getImagePath();
+                        showMedicineImage(view, med.getImagePath());
                     }
                 } else {
                     Toast.makeText(getContext(), "Không thể tải thông tin thuốc", Toast.LENGTH_SHORT).show();

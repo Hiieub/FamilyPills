@@ -1,5 +1,8 @@
 package com.example.familypills.ui.cabinet;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,7 +16,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.familypills.R;
 import com.example.familypills.data.model.Medicine;
+import com.example.familypills.data.remote.RetrofitClient;
 
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +58,7 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
     public void onBindViewHolder(@NonNull MedicineViewHolder holder, int position) {
         Medicine medicine = medicineList.get(position);
         holder.tvName.setText(medicine.getName());
+        bindMedicineImage(holder, medicine.getImagePath());
         
         String quantity = medicine.getQuantity();
         if (quantity != null && !quantity.isEmpty()) {
@@ -85,6 +92,55 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
         holder.ivMore.setOnClickListener(v -> showPopupMenu(v, medicine));
     }
 
+    private void bindMedicineImage(@NonNull MedicineViewHolder holder, String imagePath) {
+        holder.ivMedicineIcon.setTag(imagePath);
+
+        if (imagePath == null || imagePath.trim().isEmpty()) {
+            showDefaultMedicineIcon(holder);
+            return;
+        }
+
+        File localFile = new File(imagePath);
+        if (localFile.exists()) {
+            holder.ivMedicineIcon.setAlpha(1f);
+            holder.ivMedicineIcon.setPadding(0, 0, 0, 0);
+            holder.ivMedicineIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            holder.ivMedicineIcon.setImageURI(Uri.fromFile(localFile));
+            return;
+        }
+
+        holder.ivMedicineIcon.setAlpha(1f);
+        holder.ivMedicineIcon.setPadding(0, 0, 0, 0);
+        holder.ivMedicineIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        holder.ivMedicineIcon.setImageResource(R.drawable.ic_medical);
+
+        String imageUrl = RetrofitClient.getAbsoluteUrl(imagePath);
+        new Thread(() -> {
+            try {
+                Bitmap bitmap = BitmapFactory.decodeStream(new URL(imageUrl).openStream());
+                holder.ivMedicineIcon.post(() -> {
+                    if (imagePath.equals(holder.ivMedicineIcon.getTag())) {
+                        holder.ivMedicineIcon.setImageBitmap(bitmap);
+                    }
+                });
+            } catch (Exception ignored) {
+                holder.ivMedicineIcon.post(() -> {
+                    if (imagePath.equals(holder.ivMedicineIcon.getTag())) {
+                        showDefaultMedicineIcon(holder);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void showDefaultMedicineIcon(@NonNull MedicineViewHolder holder) {
+        holder.ivMedicineIcon.setAlpha(0.2f);
+        int padding = (int) (24 * holder.itemView.getResources().getDisplayMetrics().density);
+        holder.ivMedicineIcon.setPadding(padding, padding, padding, padding);
+        holder.ivMedicineIcon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        holder.ivMedicineIcon.setImageResource(R.drawable.ic_medical);
+    }
+
     private void showPopupMenu(View view, Medicine medicine) {
         PopupMenu popup = new PopupMenu(view.getContext(), view);
         popup.getMenuInflater().inflate(R.menu.menu_medicine_item, popup.getMenu());
@@ -113,10 +169,11 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
 
     static class MedicineViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvQuantity, tvExpiry, tvLastUpdated, tvStatusBadge;
-        ImageView ivMore;
+        ImageView ivMedicineIcon, ivMore;
 
         public MedicineViewHolder(@NonNull View itemView) {
             super(itemView);
+            ivMedicineIcon = itemView.findViewById(R.id.ivMedicineIcon);
             tvName = itemView.findViewById(R.id.tvMedicineName);
             tvQuantity = itemView.findViewById(R.id.tvQuantity);
             tvExpiry = itemView.findViewById(R.id.tvExpiry);

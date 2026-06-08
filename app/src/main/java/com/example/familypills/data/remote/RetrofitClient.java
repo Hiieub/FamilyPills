@@ -24,6 +24,19 @@ public class RetrofitClient {
         return isEmulator() ? BASE_URL_EMULATOR : BASE_URL_PHYSICAL_USB;
     }
 
+    public static String getAbsoluteUrl(String path) {
+        if (path == null || path.isEmpty() || path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
+
+        String baseUrl = getBaseUrl();
+        if (path.startsWith("/")) {
+            return baseUrl.substring(0, baseUrl.length() - 1) + path;
+        }
+
+        return baseUrl + path;
+    }
+
     private static boolean isEmulator() {
         return (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
                 || android.os.Build.FINGERPRINT.startsWith("generic")
