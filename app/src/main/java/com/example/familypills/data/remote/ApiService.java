@@ -21,13 +21,9 @@ import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
-/**
- * Central API interface for all endpoints
- * All non-auth endpoints require Authorization header
- */
 public interface ApiService {
 
-    // ===== AUTHENTICATION ENDPOINTS (Feature 1) =====
+    // AUTHENTICATION ENDPOINTS (Feature 1)
     
     @POST("api/auth/register")
     Call<ApiResponse<AuthResponse>> register(@Body RegisterRequest request);
@@ -41,7 +37,7 @@ public interface ApiService {
     @POST("api/auth/refresh")
     Call<ApiResponse<TokenResponse>> refreshToken(@Header("Authorization") String token);
 
-    // ===== MEDICINE ENDPOINTS (Feature 2 & 3) =====
+    // MEDICINE ENDPOINTS (Feature 2 & 3)
     
     @GET("api/medicines")
     Call<ApiResponse<MedicineListResponse>> getAllMedicines(
@@ -90,14 +86,14 @@ public interface ApiService {
             @Path("barcode") String barcode
     );
 
-    // ===== STATISTICS ENDPOINTS (Feature 4) =====
+    // STATISTICS ENDPOINTS (Feature 4)
     
     @GET("api/medicines/stats")
     Call<ApiResponse<StatsResponse>> getMedicineStats(
             @Header("Authorization") String token
     );
 
-    // ===== USER PROFILE ENDPOINTS (Feature 5) =====
+    // USER PROFILE ENDPOINTS (Feature 5)
     
     @GET("api/users/profile")
     Call<ApiResponse<UserProfile>> getUserProfile(
@@ -116,7 +112,7 @@ public interface ApiService {
             @Body ChangePasswordRequest request
     );
 
-    // ===== INNER CLASSES FOR REQUEST/RESPONSE =====
+    // INNER CLASSES FOR REQUEST/RESPONSE
 
     class RegisterRequest {
         public String email;
@@ -135,7 +131,7 @@ public interface ApiService {
     }
 
     class UpdateProfileRequest {
-        public String fullName;
+        public String newFullName;
     }
 
     class TokenResponse {

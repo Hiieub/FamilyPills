@@ -72,11 +72,17 @@
                     android:padding="32dp">
 
                     <View
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:background="@drawable/bg_avatar_placeholder"
                         android:backgroundTint="#F8FAFC"
                         android:alpha="0.5" />
+
+                    <ImageView
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_medical" />
 
                     <TextView
                         android:id="@+id/tvProfileName"
@@ -110,6 +116,7 @@
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
                     </LinearLayout>
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -165,7 +172,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Thay đổi họ tên, ảnh đại diện"
+                            android:text="Thay đổi họ tên"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
                     </LinearLayout>

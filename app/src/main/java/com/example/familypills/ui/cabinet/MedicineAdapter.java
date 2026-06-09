@@ -68,24 +68,15 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
             holder.tvQuantity.setVisibility(View.GONE);
         }
 
-        holder.tvExpiry.setText("HSD: " + medicine.getExpiryDate());
+        String expiryFormatted = formatDate(medicine.getExpiryDate());
+        holder.tvExpiry.setText("HSD: " + expiryFormatted);
         
-        String lastUpdated = medicine.getLastUpdated();
-        if (lastUpdated != null && !lastUpdated.equals("null")) {
+        String lastUpdated = formatDate(medicine.getLastUpdated());
+        if (lastUpdated != null && !lastUpdated.isEmpty()) {
             holder.tvLastUpdated.setVisibility(View.VISIBLE);
             holder.tvLastUpdated.setText("Cập nhật lần cuối: " + lastUpdated);
         } else {
             holder.tvLastUpdated.setVisibility(View.GONE);
-        }
-
-        if (medicine.isRunningLow()) {
-            holder.tvStatusBadge.setVisibility(View.VISIBLE);
-            holder.tvStatusBadge.setText("Sắp hết");
-        } else if (medicine.isExpired()) {
-            holder.tvStatusBadge.setVisibility(View.VISIBLE);
-            holder.tvStatusBadge.setText("Hết hạn");
-        } else {
-            holder.tvStatusBadge.setVisibility(View.GONE);
         }
 
         holder.ivMore.setVisibility(showMenu ? View.VISIBLE : View.GONE);
@@ -141,6 +132,23 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
         holder.ivMedicineIcon.setImageResource(R.drawable.ic_medical);
     }
 
+    private String formatDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty() || dateStr.equals("null")) return "";
+        try {
+            java.text.SimpleDateFormat inputFormat;
+            if (dateStr.contains("T")) {
+                inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault());
+            } else {
+                inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+            }
+            java.util.Date date = inputFormat.parse(dateStr);
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            return dateStr; // fallback if parsing fails
+        }
+    }
+
     private void showPopupMenu(View view, Medicine medicine) {
         PopupMenu popup = new PopupMenu(view.getContext(), view);
         popup.getMenuInflater().inflate(R.menu.menu_medicine_item, popup.getMenu());
@@ -168,7 +176,7 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
     }
 
     static class MedicineViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvQuantity, tvExpiry, tvLastUpdated, tvStatusBadge;
+        TextView tvName, tvQuantity, tvExpiry, tvLastUpdated;
         ImageView ivMedicineIcon, ivMore;
 
         public MedicineViewHolder(@NonNull View itemView) {
@@ -178,7 +186,6 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
             tvQuantity = itemView.findViewById(R.id.tvQuantity);
             tvExpiry = itemView.findViewById(R.id.tvExpiry);
             tvLastUpdated = itemView.findViewById(R.id.tvLastUpdated);
-            tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge);
             ivMore = itemView.findViewById(R.id.ivMore);
         }
     }

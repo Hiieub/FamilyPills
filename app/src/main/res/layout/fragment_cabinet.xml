@@ -94,18 +94,6 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/tvFilterExpired"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/bg_filter_unselected"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp"
-                android:text="Hết hạn"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-
-            <TextView
                 android:id="@+id/tvFilterRunningLow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -114,6 +102,18 @@
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="8dp"
                 android:text="Sắp hết hạn"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvFilterExpired"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:background="@drawable/bg_filter_unselected"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:text="Hết hạn"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
         </LinearLayout>

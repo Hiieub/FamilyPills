@@ -64,7 +64,7 @@ public class ProfileFragment extends Fragment {
     private void observeViewModel() {
         viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {
             if (profile != null) {
-                tvName.setText(profile.getFullName());
+                tvName.setText(profile.getFullName() != null ? profile.getFullName() : "Người dùng");
                 tvEmail.setText(profile.getEmail());
             }
         });
@@ -146,6 +146,12 @@ public class ProfileFragment extends Fragment {
         });
 
         dialog.show();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        viewModel.loadUserProfile();
     }
 
     private void logout() {

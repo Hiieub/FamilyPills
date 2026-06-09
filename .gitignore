@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Runtime images from camera/gallery should stay local
+/app/src/main/assets/uploads/
+/app/src/main/res/raw/uploads/
+/uploads/
+/captures/

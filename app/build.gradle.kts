@@ -59,6 +59,9 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
+    // ExifInterface – read EXIF orientation from camera photos to fix rotation
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+
     // Room dependencies (Optional: keep if you want local cache, or remove if going 100% API)
     // val roomVersion = "2.6.1"
     // implementation("androidx.room:room-runtime:$roomVersion")

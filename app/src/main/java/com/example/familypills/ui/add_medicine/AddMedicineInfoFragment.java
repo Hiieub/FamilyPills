@@ -22,10 +22,16 @@ import android.net.Uri;
 import android.app.DatePickerDialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.Locale;
+
+import android.graphics.Matrix;
+import androidx.exifinterface.media.ExifInterface;
 
 import com.example.familypills.data.model.ApiResponse;
 import com.example.familypills.data.model.Medicine;
@@ -115,7 +121,7 @@ public class AddMedicineInfoFragment extends Fragment {
 
             DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(),
                     (view1, selectedYear, selectedMonth, selectedDay) -> {
-                        String formattedDate = String.format(Locale.getDefault(), "%02d/%02d/%04d", selectedMonth + 1, selectedDay, selectedYear);
+                        String formattedDate = String.format(Locale.getDefault(), "%02d/%02d/%04d", selectedDay, selectedMonth + 1, selectedYear);
                         tvExpiryDate.setText(formattedDate);
                         tvExpiryDate.setTextColor(getResources().getColor(R.color.text_main));
                     }, year, month, day);
@@ -199,7 +205,48 @@ public class AddMedicineInfoFragment extends Fragment {
 
         File localFile = new File(imagePath);
         if (localFile.exists()) {
-            ivMedicineImage.setImageURI(Uri.fromFile(localFile));
+            // Decode + apply EXIF rotation for the in-form preview
+            new Thread(() -> {
+                try {
+                    int rotationDegrees = 0;
+                    try {
+                        ExifInterface exif = new ExifInterface(localFile.getAbsolutePath());
+                        int orientation = exif.getAttributeInt(
+                                ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                        switch (orientation) {
+                            case ExifInterface.ORIENTATION_ROTATE_90:  rotationDegrees = 90;  break;
+                            case ExifInterface.ORIENTATION_ROTATE_180: rotationDegrees = 180; break;
+                            case ExifInterface.ORIENTATION_ROTATE_270: rotationDegrees = 270; break;
+                        }
+                    } catch (IOException ignored) {}
+
+                    BitmapFactory.Options opts = new BitmapFactory.Options();
+                    opts.inSampleSize = 2; // downsample for preview to save memory
+                    Bitmap bitmap = BitmapFactory.decodeFile(localFile.getAbsolutePath(), opts);
+                    if (bitmap != null && rotationDegrees != 0) {
+                        Matrix matrix = new Matrix();
+                        matrix.postRotate(rotationDegrees);
+                        Bitmap rotated = Bitmap.createBitmap(bitmap, 0, 0,
+                                bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                        bitmap.recycle();
+                        bitmap = rotated;
+                    }
+                    final Bitmap finalBitmap = bitmap;
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            if (finalBitmap != null) {
+                                ivMedicineImage.setImageBitmap(finalBitmap);
+                            } else {
+                                ivMedicineImage.setImageURI(Uri.fromFile(localFile));
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> ivMedicineImage.setImageURI(Uri.fromFile(localFile)));
+                    }
+                }
+            }).start();
             return;
         }
 
@@ -278,25 +325,126 @@ public class AddMedicineInfoFragment extends Fragment {
         }
 
         btnSave.setText("Đang tải ảnh...");
-        medicineRepository.uploadMedicineImage(requireContext(), new File(capturedImagePath)).enqueue(new Callback<ApiResponse<ApiService.ImageUploadResponse>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<ApiService.ImageUploadResponse>> call, Response<ApiResponse<ApiService.ImageUploadResponse>> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().getData() != null) {
-                    capturedImagePath = response.body().getData().imagePath;
-                    medicine.setImagePath(capturedImagePath);
-                    saveMedicineToApi(medicine, btnSave);
-                } else {
-                    resetSaveButton(btnSave);
-                    Toast.makeText(getContext(), "Tải ảnh thất bại. Vui lòng thử lại.", Toast.LENGTH_SHORT).show();
-                }
+
+        // Compress on a background thread to avoid blocking UI
+        File originalFile = new File(capturedImagePath);
+        new Thread(() -> {
+            File fileToUpload;
+            try {
+                fileToUpload = compressImageForUpload(originalFile);
+            } catch (Exception e) {
+                fileToUpload = originalFile; // fallback to original if compression fails
             }
 
-            @Override
-            public void onFailure(Call<ApiResponse<ApiService.ImageUploadResponse>> call, Throwable t) {
-                resetSaveButton(btnSave);
-                Toast.makeText(getContext(), "Lỗi tải ảnh: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            final File uploadFile = fileToUpload;
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() ->
+                    medicineRepository.uploadMedicineImage(requireContext(), uploadFile)
+                        .enqueue(new retrofit2.Callback<ApiResponse<ApiService.ImageUploadResponse>>() {
+                            @Override
+                            public void onResponse(retrofit2.Call<ApiResponse<ApiService.ImageUploadResponse>> call,
+                                                   retrofit2.Response<ApiResponse<ApiService.ImageUploadResponse>> response) {
+                                if (response.isSuccessful() && response.body() != null && response.body().getData() != null) {
+                                    capturedImagePath = response.body().getData().imagePath;
+                                    medicine.setImagePath(capturedImagePath);
+                                    saveMedicineToApi(medicine, btnSave);
+                                } else {
+                                    resetSaveButton(btnSave);
+                                    String msg = "Tải ảnh thất bại (HTTP " + response.code() + "). Vui lòng thử lại.";
+                                    Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(retrofit2.Call<ApiResponse<ApiService.ImageUploadResponse>> call, Throwable t) {
+                                resetSaveButton(btnSave);
+                                Toast.makeText(getContext(), "Lỗi tải ảnh: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                );
             }
-        });
+        }).start();
+    }
+
+    /**
+     * Compress, resize, and CORRECT ROTATION of an image file before uploading.
+     *
+     * CameraX saves photos with EXIF orientation metadata but the pixel data is
+     * always in the sensor's "natural" orientation. BitmapFactory ignores EXIF,
+     * so we must read the tag and rotate the bitmap manually before re-encoding.
+     * Without this step, portrait photos appear rotated 90° on the server/viewer.
+     */
+    private File compressImageForUpload(File originalFile) throws Exception {
+        // ---- Step 1: Read EXIF rotation BEFORE decoding (while path is still valid) ----
+        int rotationDegrees = 0;
+        try {
+            ExifInterface exif = new ExifInterface(originalFile.getAbsolutePath());
+            int orientation = exif.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:  rotationDegrees = 90;  break;
+                case ExifInterface.ORIENTATION_ROTATE_180: rotationDegrees = 180; break;
+                case ExifInterface.ORIENTATION_ROTATE_270: rotationDegrees = 270; break;
+                default: rotationDegrees = 0;
+            }
+        } catch (IOException ignored) { /* keep 0 degrees */ }
+
+        // ---- Step 2: Decode with inSampleSize to avoid OOM ----
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(originalFile.getAbsolutePath(), options);
+
+        int maxDimen = 1280;
+        int sampleSize = 1;
+        while (options.outWidth / sampleSize > maxDimen * 2 || options.outHeight / sampleSize > maxDimen * 2) {
+            sampleSize *= 2;
+        }
+        options.inJustDecodeBounds = false;
+        options.inSampleSize = sampleSize;
+        Bitmap bitmap = BitmapFactory.decodeFile(originalFile.getAbsolutePath(), options);
+        if (bitmap == null) throw new Exception("Cannot decode image");
+
+        // ---- Step 3: Apply EXIF rotation ----
+        if (rotationDegrees != 0) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotationDegrees);
+            Bitmap rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            bitmap.recycle();
+            bitmap = rotated;
+        }
+
+        // ---- Step 4: Scale so longest side <= 1280px ----
+        int w = bitmap.getWidth();
+        int h = bitmap.getHeight();
+        if (w > maxDimen || h > maxDimen) {
+            float scale = (float) maxDimen / Math.max(w, h);
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, Math.round(w * scale), Math.round(h * scale), true);
+            bitmap.recycle();
+            bitmap = scaled;
+        }
+
+        // ---- Step 5: Iteratively compress until < 1 MB ----
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int quality = 90;
+        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+        while (baos.size() > 1024 * 1024 && quality > 40) {
+            baos.reset();
+            quality -= 10;
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+        }
+
+        // ---- Step 6: Write compressed + rotated file ----
+        String baseName = originalFile.getName();
+        String compressedName = baseName.contains(".")
+                ? baseName.substring(0, baseName.lastIndexOf('.')) + "_compressed.jpg"
+                : baseName + "_compressed.jpg";
+        File compressedFile = new File(originalFile.getParent(), compressedName);
+        try (FileOutputStream fos = new FileOutputStream(compressedFile)) {
+            fos.write(baos.toByteArray());
+        }
+
+        bitmap.recycle();
+        return compressedFile;
     }
 
     private boolean isLocalImagePath(String imagePath) {

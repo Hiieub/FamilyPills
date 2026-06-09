@@ -30,7 +30,7 @@ public class UserRepository {
 
     public Call<ApiResponse<UserProfile>> updateUserProfile(Context context, String fullName) {
         ApiService.UpdateProfileRequest request = new ApiService.UpdateProfileRequest();
-        request.fullName = fullName;
+        request.newFullName = fullName;
         return apiService.updateUserProfile(getToken(context), request);
     }
 

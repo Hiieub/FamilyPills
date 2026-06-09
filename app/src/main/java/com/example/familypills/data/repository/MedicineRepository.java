@@ -57,8 +57,20 @@ public class MedicineRepository {
     }
 
     public Call<ApiResponse<ApiService.ImageUploadResponse>> uploadMedicineImage(Context context, File imageFile) {
-        RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile);
+        String mimeType = getMimeType(imageFile.getName());
+        RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), imageFile);
         MultipartBody.Part body = MultipartBody.Part.createFormData("file", imageFile.getName(), requestFile);
         return apiService.uploadMedicineImage(getToken(context), body);
+    }
+
+    /** Returns a concrete MIME type string for common image extensions. */
+    private String getMimeType(String fileName) {
+        if (fileName == null) return "image/jpeg";
+        String lower = fileName.toLowerCase();
+        if (lower.endsWith(".png"))  return "image/png";
+        if (lower.endsWith(".gif"))  return "image/gif";
+        if (lower.endsWith(".webp")) return "image/webp";
+        if (lower.endsWith(".bmp"))  return "image/bmp";
+        return "image/jpeg";
     }
 }

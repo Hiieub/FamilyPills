@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName;
  * User profile response from backend
  */
 public class UserProfile {
-    @SerializedName("id")
+    @SerializedName("userId")
     private int userId;
     private String email;
     private String fullName;
